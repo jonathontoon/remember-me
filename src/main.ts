@@ -46,9 +46,7 @@ try {
   window.addEventListener("resize", resize);
   window.addEventListener("pagehide", stop, { once: true });
   window.addEventListener("click", () => {
-    if (artworkDetails) {
-      artworkDetails.hidden = !artworkDetails.hidden;
-    }
+    artworkDetails?.classList.toggle("hidden");
   });
   animationFrame = window.requestAnimationFrame(render);
 } catch (error) {

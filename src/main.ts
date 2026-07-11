@@ -3,7 +3,7 @@ import { createSkyRenderer, type SkyRenderer } from "./renderer/webglSky";
 
 function getRequiredElement<T extends Element>(
   id: string,
-  constructor: { new (): T },
+  constructor: { new(): T },
 ): T {
   const element = document.getElementById(id);
   if (!(element instanceof constructor)) {

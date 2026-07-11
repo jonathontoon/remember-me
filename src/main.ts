@@ -16,6 +16,7 @@ const canvas = getRequiredElement("sky", HTMLCanvasElement);
 const favicon = getRequiredElement("favicon", HTMLLinkElement);
 const errorMessage = getRequiredElement("error", HTMLParagraphElement);
 const artworkDetails = document.querySelector<HTMLElement>("aside");
+const hideText = new URLSearchParams(window.location.search).has("hide");
 
 let renderer: SkyRenderer | null = null;
 let animationFrame = 0;
@@ -43,6 +44,9 @@ try {
   window.addEventListener("click", () => {
     artworkDetails?.classList.toggle("hidden");
   });
+  if (hideText) {
+    artworkDetails?.classList.add("hidden");
+  }
   animationFrame = window.requestAnimationFrame(render);
 } catch (error) {
   errorMessage.textContent =

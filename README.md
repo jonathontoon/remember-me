@@ -4,7 +4,7 @@ A digital art installation that generates colors shaped by your time of day.
 
 [**View Live →**](https://www.ofatime.com/)
 
-Inspired by Explosions in the Sky and Tori Hinn.
+Inspired by "Remember Me as a Time of Day" by Explosions in the Sky and the works of Tori Hinn.
 
 ## Built with
 

@@ -1,7 +1,6 @@
-import { useRef, useState, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 
-import { useMountEffect } from "../hooks/useMountEffect";
-import { createSkyRenderer } from "../renderer/skyRenderer";
+import { useSkyRenderer } from "../hooks/useSkyRenderer";
 
 type SkyCanvasProps = Readonly<{
   faviconRef: RefObject<HTMLLinkElement | null>;
@@ -9,26 +8,7 @@ type SkyCanvasProps = Readonly<{
 
 export function SkyCanvas({ faviconRef }: SkyCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useMountEffect(() => {
-    const canvas = canvasRef.current;
-    const favicon = faviconRef.current;
-    if (!canvas || !favicon) {
-      setError("The sky renderer could not find its canvas.");
-      return;
-    }
-
-    try {
-      return createSkyRenderer(canvas, favicon);
-    } catch (renderError) {
-      setError(
-        renderError instanceof Error
-          ? renderError.message
-          : "The sky renderer could not start.",
-      );
-    }
-  });
+  const error = useSkyRenderer(canvasRef, faviconRef);
 
   if (error) {
     return (

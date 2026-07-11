@@ -1,51 +1,19 @@
+import { FRAGMENT_SOURCE, VERTEX_SOURCE } from "./shaders";
+
 type UniformLocations = Readonly<{
   resolution: WebGLUniformLocation;
   time: WebGLUniformLocation;
   day: WebGLUniformLocation;
 }>;
 
+export type SkyRenderer = Readonly<{
+  resize: () => void;
+  render: (milliseconds: number) => void;
+  destroy: () => void;
+}>;
+
 const DAY_MINUTES = 24 * 60;
 const MAX_DEVICE_PIXEL_RATIO = 2;
-
-const vertexSource = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
-const fragmentSource = `
-precision highp float;
-uniform vec2 resolution;
-uniform float time;
-uniform float day;
-
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) { vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y); }
-vec3 ramp(float t) {
-  vec3 night = vec3(0.015,0.035,0.12);
-  vec3 blue = vec3(0.075,0.22,0.46);
-  vec3 dayBlue = vec3(0.31,0.70,0.86);
-  vec3 gold = vec3(1.0,0.59,0.28);
-  vec3 blush = vec3(0.92,0.34,0.35);
-  vec3 dusk = vec3(0.28,0.10,0.32);
-  float cycle = sin(t * 6.283185);
-  float warm = smoothstep(-.15,.5,cycle) * smoothstep(.95,.25,cycle);
-  vec3 sky = mix(night, blue, smoothstep(0.,.22,t));
-  sky = mix(sky, dayBlue, smoothstep(.18,.42,t));
-  sky = mix(sky, gold, smoothstep(.34,.54,t));
-  sky = mix(sky, blush, smoothstep(.48,.64,t));
-  sky = mix(sky, dusk, smoothstep(.60,.80,t));
-  sky = mix(sky, night, smoothstep(.78,1.,t));
-  return sky + warm * vec3(.12,.04,-.01);
-}
-void main() {
-  vec2 uv = gl_FragCoord.xy / resolution.xy;
-  float aspect = resolution.x / resolution.y;
-  vec2 p = uv - .5; p.x *= aspect;
-  float localTime = fract(day);
-  float drift = sin(time * .00007 + p.y * 3.0) * .012 + noise(uv * 2.3 + time*.000025) * .018;
-  vec3 top = ramp(localTime + .02);
-  vec3 bottom = ramp(localTime - .10);
-  vec3 color = mix(top, bottom, smoothstep(.10,.92,uv.y) + drift);
-  float vignette = 1.0 - smoothstep(.24,.82,length(p / vec2(aspect,.8)));
-  color *= .88 + vignette * .12;
-  gl_FragColor = vec4(pow(max(color,0.0), vec3(.92)), 1.0);
-}`;
 
 function getWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext {
   const context = canvas.getContext("webgl", {
@@ -161,10 +129,10 @@ function updateFaviconFromFrame(
 export function createSkyRenderer(
   canvas: HTMLCanvasElement,
   favicon: HTMLLinkElement,
-): () => void {
+): SkyRenderer {
   const gl = getWebGLContext(canvas);
-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, VERTEX_SOURCE);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SOURCE);
   const program = createProgram(gl, vertexShader, fragmentShader);
   const buffer = gl.createBuffer();
   if (!buffer) {
@@ -200,9 +168,8 @@ export function createSkyRenderer(
     gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
   };
 
-  let animationFrame = 0;
   let lastFaviconSecond = -1;
-  const tick = (milliseconds: number): void => {
+  const render = (milliseconds: number): void => {
     const currentMinutes = getLocalMinutes(new Date());
     gl.uniform1f(uniforms.time, milliseconds);
     gl.uniform1f(uniforms.day, currentMinutes / DAY_MINUTES);
@@ -213,20 +180,14 @@ export function createSkyRenderer(
       lastFaviconSecond = frameSecond;
       updateFaviconFromFrame(gl, canvas, favicon);
     }
-
-    animationFrame = window.requestAnimationFrame(tick);
   };
 
-  window.addEventListener("resize", resize);
-  resize();
-  animationFrame = window.requestAnimationFrame(tick);
-
-  return () => {
-    window.removeEventListener("resize", resize);
-    window.cancelAnimationFrame(animationFrame);
+  const destroy = (): void => {
     gl.deleteBuffer(buffer);
     gl.deleteProgram(program);
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
   };
+
+  return { resize, render, destroy };
 }

@@ -41,15 +41,7 @@ const render = (milliseconds: number): void => {
 try {
   renderer = createSkyRenderer(canvas, favicon);
   renderer.resize();
-  if (import.meta.env.DEV) {
-    void import("./dev/timeControls").then(({ createTimeControls }) => {
-      if (renderer) {
-        timeControls = createTimeControls((override) => {
-          dayOverride = override;
-        });
-      }
-    });
-  }
+
   window.addEventListener("resize", resize);
   window.addEventListener("pagehide", stop, { once: true });
   animationFrame = window.requestAnimationFrame(render);

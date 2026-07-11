@@ -1,3 +1,7 @@
 import { defineConfig } from "vite";
 
-export default defineConfig({});
+import { cloudflare } from "@cloudflare/vite-plugin";
+
+export default defineConfig({
+  plugins: [cloudflare()],
+});

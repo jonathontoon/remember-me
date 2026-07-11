@@ -1,12 +1,8 @@
-# Remember Me as a Time of Day
+# Of A Time
 
-A WebGL installation that turns the current local time into a slowly changing sky gradient.
+A digital art installation that generates colors shaped by your time of day.
 
-[**View Live →**](https://time-of-day.pages.dev)
-
-![Screenshot](screenshot.png)
-
-The page uses the browser's local clock, so the colors follow the time where you are. The favicon uses the same colors as the WebGL frame.
+[**View Live →**](https://www.ofatime.com/)
 
 Inspired by Explosions in the Sky and their song "Remember Me as a Time of Day."
 
@@ -20,5 +16,3 @@ Inspired by Explosions in the Sky and their song "Remember Me as a Time of Day."
 ## Credits
 
 Made by [Jonathon Toon](https://www.jonathontoon.com).
-
-Follow [@jonathontoon](https://www.x.com/jonathontoon) on X.

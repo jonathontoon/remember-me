@@ -6,8 +6,21 @@ uniform vec2 resolution;
 uniform float time;
 uniform float day;
 
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) { vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y); }
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0)), f.x),
+    f.y
+  );
+}
+
 vec3 ramp(float t) {
   vec3 night = vec3(0.015,0.035,0.12);
   vec3 blue = vec3(0.075,0.22,0.46);
@@ -25,16 +38,115 @@ vec3 ramp(float t) {
   sky = mix(sky, night, smoothstep(.78,1.,t));
   return sky + warm * vec3(.12,.04,-.01);
 }
+
+vec3 palette(float offset) {
+  return ramp(fract(day + offset));
+}
+
+float organicField(
+  vec2 p,
+  vec2 center,
+  vec2 scale,
+  float rotation,
+  float phase,
+  float softness
+) {
+  float cosine = cos(rotation);
+  float sine = sin(rotation);
+  mat2 transform = mat2(cosine, -sine, sine, cosine);
+  vec2 q = transform * (p - center);
+
+  float bend = sin(q.y * 3.2 + phase) * 0.10;
+  bend += sin(q.y * 6.1 - phase * 0.7) * 0.025;
+  q.x += bend * scale.x;
+  q.y += sin(q.x * 3.7 + phase * 0.6) * 0.035 * scale.y;
+
+  float distanceFromCenter = length(q / scale);
+  return 1.0 - smoothstep(1.0 - softness, 1.0 + softness, distanceFromCenter);
+}
+
 void main() {
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   float aspect = resolution.x / resolution.y;
-  vec2 p = uv - .5; p.x *= aspect;
+  vec2 p = uv - 0.5;
+  p.x *= aspect;
+
   float localTime = fract(day);
-  float drift = sin(time * .00007 + p.y * 3.0) * .012 + noise(uv * 2.3 + time*.000025) * .018;
-  vec3 top = ramp(localTime + .02);
-  vec3 bottom = ramp(localTime - .10);
-  vec3 color = mix(top, bottom, smoothstep(.10,.92,uv.y) + drift);
-  float vignette = 1.0 - smoothstep(.24,.82,length(p / vec2(aspect,.8)));
-  color *= .88 + vignette * .12;
-  gl_FragColor = vec4(pow(max(color,0.0), vec3(.92)), 1.0);
+  float minutes = time * 0.0000166667;
+
+  float boundaryNoise = noise(uv * 2.15 + vec2(minutes * 0.012, -minutes * 0.008));
+  float horizonDrift = sin(minutes * 0.11 + p.x * 1.7) * 0.010;
+  horizonDrift += (boundaryNoise - 0.5) * 0.014;
+
+  vec3 horizon = ramp(fract(localTime - 0.10));
+  vec3 zenith = ramp(fract(localTime + 0.025));
+  float atmosphere = smoothstep(0.04, 0.96, uv.y + horizonDrift);
+  vec3 color = mix(horizon, zenith, atmosphere);
+
+  float warmPhase = minutes * 0.075;
+  vec2 warmCenter = vec2(
+    -0.27 * aspect + sin(minutes * 0.041) * 0.055,
+    -0.31 + cos(minutes * 0.033) * 0.045
+  );
+  float warmField = organicField(
+    p,
+    warmCenter,
+    vec2(0.50 + aspect * 0.05, 0.44),
+    -0.22,
+    warmPhase,
+    0.30
+  );
+  warmField *= 0.78 + boundaryNoise * 0.12;
+  color = mix(color, palette(-0.13), warmField * 0.58);
+
+  float edgePhase = 1.7 + minutes * 0.052;
+  vec2 edgeCenter = vec2(
+    0.34 * aspect + cos(minutes * 0.029) * 0.045,
+    0.08 + sin(minutes * 0.037) * 0.055
+  );
+  float edgeField = organicField(
+    p,
+    edgeCenter,
+    vec2(0.34 + aspect * 0.05, 0.63),
+    0.15,
+    edgePhase,
+    0.24
+  );
+  edgeField *= 0.84 + (1.0 - boundaryNoise) * 0.10;
+  color = mix(color, palette(0.13), edgeField * 0.60);
+
+  float counterPhase = 3.4 + minutes * 0.046;
+  vec2 counterCenter = vec2(
+    -0.05 * aspect + sin(minutes * 0.027) * 0.05,
+    0.25 + cos(minutes * 0.031) * 0.04
+  );
+  float counterField = organicField(
+    p,
+    counterCenter,
+    vec2(0.30 + aspect * 0.025, 0.34),
+    -0.48,
+    counterPhase,
+    0.34
+  );
+  float counterCut = organicField(
+    p,
+    counterCenter + vec2(0.12, -0.12),
+    vec2(0.20 + aspect * 0.02, 0.23),
+    -0.30,
+    counterPhase + 0.8,
+    0.38
+  );
+  counterField *= 1.0 - counterCut * 0.42;
+  color = mix(color, palette(0.21), counterField * 0.40);
+
+  float centerLight = 1.0 - smoothstep(
+    0.18,
+    0.92,
+    length(p / vec2(max(aspect, 1.0), 0.86))
+  );
+  color *= 0.92 + centerLight * 0.08;
+
+  float nightLift = 1.0 - smoothstep(0.08, 0.28, length(color));
+  color += palette(0.025) * nightLift * 0.035;
+  gl_FragColor = vec4(pow(max(color, 0.0), vec3(0.92)), 1.0);
 }`;

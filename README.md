@@ -1,6 +1,8 @@
 # What Light Remains
 
-A digital art installation that generates colors shaped by your time of day.
+A digital installation that creates colors shaped by your time of day.
+
+![What Light Remains](public/og.png)
 
 [**View Live →**](https://www.ofatime.com/)
 

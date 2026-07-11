@@ -11,32 +11,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a1424" />
+    <link id="favicon" rel="icon" href="data:," />
     <title>Remember Me as a Time of Day</title>
-    <style>
-      html,
-      body,
-      #root {
-        min-height: 100%;
-        margin: 0;
-        background: #0b1220;
-      }
-
-      html,
-      body {
-        min-width: 320px;
-      }
-
-      body {
-        -webkit-font-smoothing: antialiased;
-      }
-
-      #root {
-        min-height: 100svh;
-      }
-    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <main aria-label="A time of day, a living sky gradient">
+      <canvas id="sky" aria-hidden="true"></canvas>
+      <p id="error" role="alert" hidden></p>
+      <aside aria-label="Artwork details">
+        <p class="title">Remember Me as a Time of Day</p>
+        <p>
+          <a
+            href="https://www.jonathontoon.com"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Jonathon Toon
+          </a>
+          · WebGL · 2026
+        </p>
+      </aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,5 +1,3 @@
-import "./style.css";
-
 import { createSkyRenderer, type SkyRenderer } from "./renderer/webglSky";
 
 function getRequiredElement<T extends Element>(

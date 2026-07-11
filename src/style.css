@@ -67,6 +67,10 @@ aside .title {
   font-weight: 500;
 }
 
+aside .description {
+  margin-top: 0.4rem;
+}
+
 aside a {
   color: inherit;
   text-decoration: none;

@@ -1,5 +1,3 @@
-import "./style.css";
-
 import type { TimeControls } from "./dev/timeControls";
 import { createSkyRenderer, type SkyRenderer } from "./renderer/webglSky";
 

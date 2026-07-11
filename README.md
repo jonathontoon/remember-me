@@ -1,10 +1,10 @@
-# Of A Time
+# What Light Remains
 
 A digital art installation that generates colors shaped by your time of day.
 
 [**View Live →**](https://www.ofatime.com/)
 
-Inspired by Explosions in the Sky and their song "Remember Me as a Time of Day."
+Inspired by Explosions in the Sky and Tori Hinn.
 
 ## Built with
 

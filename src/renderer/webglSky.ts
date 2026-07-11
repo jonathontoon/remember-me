@@ -4,6 +4,7 @@ type UniformLocations = Readonly<{
   resolution: WebGLUniformLocation;
   time: WebGLUniformLocation;
   day: WebGLUniformLocation;
+  dateSeed: WebGLUniformLocation;
 }>;
 
 export type SkyRenderer = Readonly<{
@@ -13,6 +14,7 @@ export type SkyRenderer = Readonly<{
 }>;
 
 const DAY_MINUTES = 24 * 60;
+const DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 function getWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext {
@@ -100,6 +102,13 @@ function getLocalMinutes(date: Date): number {
   return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
 }
 
+function getLocalDateSeed(date: Date): number {
+  return (
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) /
+    DAY_MILLISECONDS
+  );
+}
+
 function updateFaviconFromFrame(
   gl: WebGLRenderingContext,
   canvas: HTMLCanvasElement,
@@ -155,6 +164,7 @@ export function createSkyRenderer(
     resolution: getRequiredUniformLocation(gl, program, "resolution"),
     time: getRequiredUniformLocation(gl, program, "time"),
     day: getRequiredUniformLocation(gl, program, "day"),
+    dateSeed: getRequiredUniformLocation(gl, program, "dateSeed"),
   };
 
   const resize = (): void => {
@@ -170,9 +180,11 @@ export function createSkyRenderer(
 
   let lastFaviconSecond = -1;
   const render = (milliseconds: number): void => {
-    const currentMinutes = getLocalMinutes(new Date());
+    const currentDate = new Date();
+    const currentMinutes = getLocalMinutes(currentDate);
     gl.uniform1f(uniforms.time, milliseconds);
     gl.uniform1f(uniforms.day, currentMinutes / DAY_MINUTES);
+    gl.uniform1f(uniforms.dateSeed, getLocalDateSeed(currentDate));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     const frameSecond = Math.floor(milliseconds / 1000);

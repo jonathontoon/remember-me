@@ -5,6 +5,7 @@ precision highp float;
 uniform vec2 resolution;
 uniform float time;
 uniform float day;
+uniform float dateSeed;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -73,8 +74,14 @@ void main() {
 
   float localTime = fract(day);
   float minutes = time * 0.0000166667;
+  float seedA = hash(vec2(dateSeed, 11.7));
+  float seedB = hash(vec2(dateSeed, 37.1));
+  float seedC = hash(vec2(dateSeed, 83.9));
+  vec2 seedOffset = vec2(seedA - 0.5, seedB - 0.5);
 
-  float boundaryNoise = noise(uv * 2.15 + vec2(minutes * 0.012, -minutes * 0.008));
+  float boundaryNoise = noise(
+    uv * 2.15 + seedOffset * 4.0 + vec2(minutes * 0.012, -minutes * 0.008)
+  );
   float horizonDrift = sin(minutes * 0.11 + p.x * 1.7) * 0.010;
   horizonDrift += (boundaryNoise - 0.5) * 0.014;
 
@@ -85,15 +92,15 @@ void main() {
 
   float warmPhase = minutes * 0.075;
   vec2 warmCenter = vec2(
-    -0.27 * aspect + sin(minutes * 0.041) * 0.055,
-    -0.31 + cos(minutes * 0.033) * 0.045
+    (-0.27 + seedOffset.x * 0.10) * aspect + sin(minutes * 0.041) * 0.055,
+    -0.31 + seedOffset.y * 0.12 + cos(minutes * 0.033) * 0.045
   );
   float warmField = organicField(
     p,
     warmCenter,
-    vec2(0.50 + aspect * 0.05, 0.44),
-    -0.22,
-    warmPhase,
+    vec2(0.47 + seedA * 0.07 + aspect * 0.05, 0.41 + seedB * 0.06),
+    -0.32 + seedC * 0.20,
+    warmPhase + seedA * 6.283185,
     0.30
   );
   warmField *= 0.78 + boundaryNoise * 0.12;
@@ -101,15 +108,15 @@ void main() {
 
   float edgePhase = 1.7 + minutes * 0.052;
   vec2 edgeCenter = vec2(
-    0.34 * aspect + cos(minutes * 0.029) * 0.045,
-    0.08 + sin(minutes * 0.037) * 0.055
+    (0.34 + seedOffset.y * 0.09) * aspect + cos(minutes * 0.029) * 0.045,
+    0.08 + seedOffset.x * 0.14 + sin(minutes * 0.037) * 0.055
   );
   float edgeField = organicField(
     p,
     edgeCenter,
-    vec2(0.34 + aspect * 0.05, 0.63),
-    0.15,
-    edgePhase,
+    vec2(0.31 + seedB * 0.06 + aspect * 0.05, 0.58 + seedC * 0.10),
+    0.05 + seedA * 0.20,
+    edgePhase + seedB * 6.283185,
     0.24
   );
   edgeField *= 0.84 + (1.0 - boundaryNoise) * 0.10;
@@ -117,15 +124,15 @@ void main() {
 
   float counterPhase = 3.4 + minutes * 0.046;
   vec2 counterCenter = vec2(
-    -0.05 * aspect + sin(minutes * 0.027) * 0.05,
-    0.25 + cos(minutes * 0.031) * 0.04
+    (-0.05 + seedOffset.x * 0.08) * aspect + sin(minutes * 0.027) * 0.05,
+    0.25 + seedOffset.y * 0.10 + cos(minutes * 0.031) * 0.04
   );
   float counterField = organicField(
     p,
     counterCenter,
-    vec2(0.30 + aspect * 0.025, 0.34),
-    -0.48,
-    counterPhase,
+    vec2(0.27 + seedC * 0.06 + aspect * 0.025, 0.31 + seedA * 0.06),
+    -0.58 + seedB * 0.20,
+    counterPhase + seedC * 6.283185,
     0.34
   );
   float counterCut = organicField(

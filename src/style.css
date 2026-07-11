@@ -48,8 +48,8 @@ canvas {
 
 aside {
   position: absolute;
-  right: 1.75rem;
-  bottom: 1.75rem;
+  right: calc(1.75rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
   z-index: 10;
   max-width: 15rem;
   color: rgb(255 255 255 / 60%);
@@ -99,7 +99,7 @@ aside a:focus-visible {
 
 @media (max-width: 640px) {
   aside {
-    right: 1.25rem;
-    bottom: 1.25rem;
+    right: calc(1.25rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   }
 }

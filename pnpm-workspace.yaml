@@ -1,4 +1,0 @@
-packages:
-  - '.'
-minimumReleaseAgeExclude:
-  - eslint@10.7.0

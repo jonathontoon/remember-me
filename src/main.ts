@@ -16,6 +16,7 @@ function getRequiredElement<T extends Element>(
 const canvas = getRequiredElement("sky", HTMLCanvasElement);
 const favicon = getRequiredElement("favicon", HTMLLinkElement);
 const errorMessage = getRequiredElement("error", HTMLParagraphElement);
+const artworkDetails = document.querySelector<HTMLElement>("aside");
 
 let renderer: SkyRenderer | null = null;
 let timeControls: TimeControls | null = null;
@@ -44,6 +45,11 @@ try {
 
   window.addEventListener("resize", resize);
   window.addEventListener("pagehide", stop, { once: true });
+  window.addEventListener("click", () => {
+    if (artworkDetails) {
+      artworkDetails.hidden = !artworkDetails.hidden;
+    }
+  });
   animationFrame = window.requestAnimationFrame(render);
 } catch (error) {
   errorMessage.textContent =

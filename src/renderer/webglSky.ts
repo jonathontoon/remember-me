@@ -9,7 +9,7 @@ type UniformLocations = Readonly<{
 
 export type SkyRenderer = Readonly<{
   resize: () => void;
-  render: (milliseconds: number, dayOverride?: number | null) => void;
+  render: (milliseconds: number) => void;
   destroy: () => void;
 }>;
 
@@ -179,14 +179,11 @@ export function createSkyRenderer(
   };
 
   let lastFaviconSecond = -1;
-  const render = (
-    milliseconds: number,
-    dayOverride: number | null = null,
-  ): void => {
+  const render = (milliseconds: number): void => {
     const currentDate = new Date();
     const currentMinutes = getLocalMinutes(currentDate);
     gl.uniform1f(uniforms.time, milliseconds);
-    gl.uniform1f(uniforms.day, dayOverride ?? currentMinutes / DAY_MINUTES);
+    gl.uniform1f(uniforms.day, currentMinutes / DAY_MINUTES);
     gl.uniform1f(uniforms.dateSeed, getLocalDateSeed(currentDate));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 

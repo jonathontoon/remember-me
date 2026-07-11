@@ -1,9 +1,8 @@
-import type { TimeControls } from "./dev/timeControls";
 import { createSkyRenderer, type SkyRenderer } from "./renderer/webglSky";
 
 function getRequiredElement<T extends Element>(
   id: string,
-  constructor: { new(): T },
+  constructor: { new (): T },
 ): T {
   const element = document.getElementById(id);
   if (!(element instanceof constructor)) {
@@ -19,15 +18,11 @@ const errorMessage = getRequiredElement("error", HTMLParagraphElement);
 const artworkDetails = document.querySelector<HTMLElement>("aside");
 
 let renderer: SkyRenderer | null = null;
-let timeControls: TimeControls | null = null;
-let dayOverride: number | null = null;
 let animationFrame = 0;
 
 const stop = (): void => {
   window.cancelAnimationFrame(animationFrame);
   window.removeEventListener("resize", resize);
-  timeControls?.destroy();
-  timeControls = null;
   renderer?.destroy();
   renderer = null;
 };
@@ -35,7 +30,7 @@ const stop = (): void => {
 const resize = (): void => renderer?.resize();
 
 const render = (milliseconds: number): void => {
-  renderer?.render(milliseconds, dayOverride);
+  renderer?.render(milliseconds);
   animationFrame = window.requestAnimationFrame(render);
 };
 

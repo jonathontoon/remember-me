@@ -1,6 +1,10 @@
 # Remember Me as a Time of Day
 
-A small WebGL installation that turns the current local time into a slowly changing sky gradient.
+A WebGL installation that turns the current local time into a slowly changing sky gradient.
+
+[**View Live →**](https://time-of-day.pages.dev)
+
+![Screenshot](screenshot.png)
 
 The page uses the browser's local clock, so the colors follow the time where you are. The favicon uses the same colors as the WebGL frame.
 

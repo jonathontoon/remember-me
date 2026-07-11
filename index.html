@@ -12,27 +12,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a1424" />
     <title>Remember Me as a Time of Day</title>
-    <link rel="icon" id="favicon" href="data:," />
-  </head>
-  <body class="m-0 min-w-[320px] bg-[#0b1220] font-sans antialiased">
-    <main
-      class="relative isolate min-h-[100svh] overflow-hidden bg-[#0b1220]"
-      aria-label="A time of day, a living sky gradient"
-    >
-      <canvas
-        id="sky"
-        class="absolute inset-0 block h-full w-full"
-        aria-hidden="true"
-      ></canvas>
+    <style>
+      html,
+      body,
+      #root {
+        min-height: 100%;
+        margin: 0;
+        background: #0b1220;
+      }
 
-      <aside
-        class="pointer-events-none absolute bottom-7 right-7 z-10 max-w-[240px] text-right text-[10px] leading-[1.45] tracking-[.03em] text-white/60 drop-shadow-[0_1px_12px_rgba(0,0,0,.24)] max-sm:bottom-5 max-sm:right-5"
-        aria-label="Artwork details"
-      >
-        <p class="font-medium text-white/80">Remember Me as a Time of Day</p>
-        <p>Jonathon Toon · WebGL · 2026</p>
-      </aside>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
+      html,
+      body {
+        min-width: 320px;
+      }
+
+      body {
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        min-height: 100svh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,7 +1,3 @@
-import "./input.css";
-
-type ElementGuard<T extends Element> = (element: Element) => element is T;
-
 type UniformLocations = Readonly<{
   resolution: WebGLUniformLocation;
   time: WebGLUniformLocation;
@@ -51,28 +47,13 @@ void main() {
   gl_FragColor = vec4(pow(max(color,0.0), vec3(.92)), 1.0);
 }`;
 
-function getRequiredElement<T extends Element>(
-  selector: string,
-  expectedType: string,
-  guard: ElementGuard<T>,
-): T {
-  const element = document.querySelector(selector);
-  if (!element || !guard(element)) {
-    throw new Error(`Expected ${expectedType} at ${selector}.`);
-  }
-
-  return element;
-}
-
 function getWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext {
   const context = canvas.getContext("webgl", {
     antialias: false,
     premultipliedAlpha: false,
   });
   if (!context) {
-    document.body.innerHTML =
-      '<p style="padding:2rem;font-family:system-ui">This installation needs a WebGL-capable browser.</p>';
-    throw new Error("WebGL is unavailable.");
+    throw new Error("This installation needs a WebGL-capable browser.");
   }
 
   return context;
@@ -177,75 +158,75 @@ function updateFaviconFromFrame(
   favicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-const canvas = getRequiredElement(
-  "#sky",
-  "an HTMLCanvasElement",
-  (element): element is HTMLCanvasElement =>
-    element instanceof HTMLCanvasElement,
-);
-const favicon = getRequiredElement(
-  "#favicon",
-  "an HTMLLinkElement",
-  (element): element is HTMLLinkElement => element instanceof HTMLLinkElement,
-);
-const gl = getWebGLContext(canvas);
-const program = createProgram(
-  gl,
-  createShader(gl, gl.VERTEX_SHADER, vertexSource),
-  createShader(gl, gl.FRAGMENT_SHADER, fragmentSource),
-);
-const buffer = gl.createBuffer();
-if (!buffer) {
-  throw new Error("Unable to create WebGL vertex buffer.");
-}
-
-gl.useProgram(program);
-gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-gl.bufferData(
-  gl.ARRAY_BUFFER,
-  new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-  gl.STATIC_DRAW,
-);
-
-const position = getRequiredAttributeLocation(gl, program, "position");
-gl.enableVertexAttribArray(position);
-gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-
-const uniforms: UniformLocations = {
-  resolution: getRequiredUniformLocation(gl, program, "resolution"),
-  time: getRequiredUniformLocation(gl, program, "time"),
-  day: getRequiredUniformLocation(gl, program, "day"),
-};
-
-const renderState = { lastFaviconSecond: -1 };
-
-function resize(): void {
-  const devicePixelRatio = Math.min(
-    window.devicePixelRatio,
-    MAX_DEVICE_PIXEL_RATIO,
-  );
-  canvas.width = Math.round(window.innerWidth * devicePixelRatio);
-  canvas.height = Math.round(window.innerHeight * devicePixelRatio);
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
-}
-
-function tick(milliseconds: number): void {
-  const currentMinutes = getLocalMinutes(new Date());
-  gl.uniform1f(uniforms.time, milliseconds);
-  gl.uniform1f(uniforms.day, currentMinutes / DAY_MINUTES);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-  const frameSecond = Math.floor(milliseconds / 1000);
-  if (frameSecond !== renderState.lastFaviconSecond) {
-    renderState.lastFaviconSecond = frameSecond;
-    updateFaviconFromFrame(gl, canvas, favicon);
+export function createSkyRenderer(
+  canvas: HTMLCanvasElement,
+  favicon: HTMLLinkElement,
+): () => void {
+  const gl = getWebGLContext(canvas);
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+  const program = createProgram(gl, vertexShader, fragmentShader);
+  const buffer = gl.createBuffer();
+  if (!buffer) {
+    throw new Error("Unable to create WebGL vertex buffer.");
   }
 
-  window.requestAnimationFrame(tick);
+  gl.useProgram(program);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+    gl.STATIC_DRAW,
+  );
+
+  const position = getRequiredAttributeLocation(gl, program, "position");
+  gl.enableVertexAttribArray(position);
+  gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+  const uniforms: UniformLocations = {
+    resolution: getRequiredUniformLocation(gl, program, "resolution"),
+    time: getRequiredUniformLocation(gl, program, "time"),
+    day: getRequiredUniformLocation(gl, program, "day"),
+  };
+
+  const resize = (): void => {
+    const devicePixelRatio = Math.min(
+      window.devicePixelRatio,
+      MAX_DEVICE_PIXEL_RATIO,
+    );
+    canvas.width = Math.round(window.innerWidth * devicePixelRatio);
+    canvas.height = Math.round(window.innerHeight * devicePixelRatio);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+  };
+
+  let animationFrame = 0;
+  let lastFaviconSecond = -1;
+  const tick = (milliseconds: number): void => {
+    const currentMinutes = getLocalMinutes(new Date());
+    gl.uniform1f(uniforms.time, milliseconds);
+    gl.uniform1f(uniforms.day, currentMinutes / DAY_MINUTES);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    const frameSecond = Math.floor(milliseconds / 1000);
+    if (frameSecond !== lastFaviconSecond) {
+      lastFaviconSecond = frameSecond;
+      updateFaviconFromFrame(gl, canvas, favicon);
+    }
+
+    animationFrame = window.requestAnimationFrame(tick);
+  };
+
+  window.addEventListener("resize", resize);
+  resize();
+  animationFrame = window.requestAnimationFrame(tick);
+
+  return () => {
+    window.removeEventListener("resize", resize);
+    window.cancelAnimationFrame(animationFrame);
+    gl.deleteBuffer(buffer);
+    gl.deleteProgram(program);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+  };
 }
-
-window.addEventListener("resize", resize);
-
-resize();
-window.requestAnimationFrame(tick);

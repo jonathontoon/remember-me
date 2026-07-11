@@ -48,6 +48,7 @@ float organicField(
   vec2 p,
   vec2 center,
   vec2 scale,
+  float aspectCorrection,
   float rotation,
   float phase,
   float softness
@@ -56,6 +57,7 @@ float organicField(
   float sine = sin(rotation);
   mat2 transform = mat2(cosine, -sine, sine, cosine);
   vec2 q = transform * (p - center);
+  q.x *= aspectCorrection;
 
   float bend = sin(q.y * 3.2 + phase) * 0.10;
   bend += sin(q.y * 6.1 - phase * 0.7) * 0.025;
@@ -70,7 +72,7 @@ void main() {
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   float aspect = resolution.x / resolution.y;
   vec2 p = uv - 0.5;
-  p.x *= aspect;
+  float aspectCorrection = clamp(sqrt(aspect), 0.80, 1.25);
 
   float localTime = fract(day);
   float minutes = time * 0.0000166667;
@@ -92,13 +94,14 @@ void main() {
 
   float warmPhase = minutes * 0.075;
   vec2 warmCenter = vec2(
-    (-0.27 + seedOffset.x * 0.10) * aspect + sin(minutes * 0.041) * 0.055,
+    -0.27 + seedOffset.x * 0.10 + sin(minutes * 0.041) * 0.055,
     -0.31 + seedOffset.y * 0.12 + cos(minutes * 0.033) * 0.045
   );
   float warmField = organicField(
     p,
     warmCenter,
-    vec2(0.47 + seedA * 0.07 + aspect * 0.05, 0.41 + seedB * 0.06),
+    vec2(0.52 + seedA * 0.07, 0.41 + seedB * 0.06),
+    aspectCorrection,
     -0.32 + seedC * 0.20,
     warmPhase + seedA * 6.283185,
     0.30
@@ -108,13 +111,14 @@ void main() {
 
   float edgePhase = 1.7 + minutes * 0.052;
   vec2 edgeCenter = vec2(
-    (0.34 + seedOffset.y * 0.09) * aspect + cos(minutes * 0.029) * 0.045,
+    0.34 + seedOffset.y * 0.09 + cos(minutes * 0.029) * 0.045,
     0.08 + seedOffset.x * 0.14 + sin(minutes * 0.037) * 0.055
   );
   float edgeField = organicField(
     p,
     edgeCenter,
-    vec2(0.31 + seedB * 0.06 + aspect * 0.05, 0.58 + seedC * 0.10),
+    vec2(0.36 + seedB * 0.06, 0.58 + seedC * 0.10),
+    aspectCorrection,
     0.05 + seedA * 0.20,
     edgePhase + seedB * 6.283185,
     0.24
@@ -124,13 +128,14 @@ void main() {
 
   float counterPhase = 3.4 + minutes * 0.046;
   vec2 counterCenter = vec2(
-    (-0.05 + seedOffset.x * 0.08) * aspect + sin(minutes * 0.027) * 0.05,
+    -0.05 + seedOffset.x * 0.08 + sin(minutes * 0.027) * 0.05,
     0.25 + seedOffset.y * 0.10 + cos(minutes * 0.031) * 0.04
   );
   float counterField = organicField(
     p,
     counterCenter,
-    vec2(0.27 + seedC * 0.06 + aspect * 0.025, 0.31 + seedA * 0.06),
+    vec2(0.30 + seedC * 0.06, 0.31 + seedA * 0.06),
+    aspectCorrection,
     -0.58 + seedB * 0.20,
     counterPhase + seedC * 6.283185,
     0.34
@@ -138,7 +143,8 @@ void main() {
   float counterCut = organicField(
     p,
     counterCenter + vec2(0.12, -0.12),
-    vec2(0.20 + aspect * 0.02, 0.23),
+    vec2(0.23, 0.23),
+    aspectCorrection,
     -0.30,
     counterPhase + 0.8,
     0.38
@@ -148,8 +154,8 @@ void main() {
 
   float centerLight = 1.0 - smoothstep(
     0.18,
-    0.92,
-    length(p / vec2(max(aspect, 1.0), 0.86))
+    0.82,
+    length(p / vec2(0.72, 0.62))
   );
   color *= 0.92 + centerLight * 0.08;
 

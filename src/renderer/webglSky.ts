@@ -180,7 +180,7 @@ export function createSkyRenderer(
     gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
   };
 
-  let lastFaviconSecond = -1;
+  let isFaviconInitialized = false;
   const render = (
     milliseconds: number,
     dayOverride: number | null = null,
@@ -192,10 +192,9 @@ export function createSkyRenderer(
     gl.uniform1f(uniforms.dateSeed, getLocalDateSeed(currentDate));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    const frameSecond = Math.floor(milliseconds / 1000);
-    if (frameSecond !== lastFaviconSecond) {
-      lastFaviconSecond = frameSecond;
+    if (!isFaviconInitialized) {
       updateFaviconFromFrame(gl, canvas, favicon);
+      isFaviconInitialized = true;
     }
   };
 

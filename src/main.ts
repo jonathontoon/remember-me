@@ -20,8 +20,11 @@ const artworkDetails = document.querySelector<HTMLElement>("aside");
 
 let renderer: SkyRenderer | null = null;
 let animationFrame = 0;
+let isContextLost = false;
+let lastRenderMilliseconds = Number.NEGATIVE_INFINITY;
 
 const DAY_MINUTES = 24 * 60;
+const FRAME_INTERVAL_MILLISECONDS = 200;
 
 function parseTimeOverride(time: string): number | null {
   const match = /^(\d{1,2}):(\d{2})$/.exec(time);
@@ -36,23 +39,93 @@ const timeOverride = params.has("time")
   ? parseTimeOverride(params.get("time")!)
   : null;
 
-const stop = (): void => {
+function pauseAnimation(): void {
   window.cancelAnimationFrame(animationFrame);
+  animationFrame = 0;
+}
+
+function stop(): void {
+  pauseAnimation();
   window.removeEventListener("resize", resize);
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  canvas.removeEventListener("webglcontextlost", handleContextLost);
+  canvas.removeEventListener("webglcontextrestored", handleContextRestored);
   renderer?.destroy();
   renderer = null;
-};
+}
 
-const resize = (): void => renderer?.resize();
-
-const render = (milliseconds: number): void => {
+function draw(milliseconds: number): void {
   renderer?.render(milliseconds, timeOverride);
+  lastRenderMilliseconds = milliseconds;
+}
+
+function render(milliseconds: number): void {
+  animationFrame = 0;
+  if (!renderer || document.hidden || isContextLost) return;
+
+  if (milliseconds - lastRenderMilliseconds >= FRAME_INTERVAL_MILLISECONDS) {
+    draw(milliseconds);
+  }
   animationFrame = window.requestAnimationFrame(render);
-};
+}
+
+function resumeAnimation(): void {
+  if (animationFrame !== 0 || !renderer || document.hidden || isContextLost) {
+    return;
+  }
+
+  renderer.resize();
+  draw(performance.now());
+  animationFrame = window.requestAnimationFrame(render);
+}
+
+function resize(): void {
+  renderer?.resize();
+  if (renderer && !document.hidden && !isContextLost) {
+    draw(performance.now());
+  }
+}
+
+function handleVisibilityChange(): void {
+  if (document.hidden) {
+    pauseAnimation();
+  } else {
+    resumeAnimation();
+  }
+}
+
+function handleContextLost(event: Event): void {
+  event.preventDefault();
+  isContextLost = true;
+  pauseAnimation();
+  renderer = null;
+}
+
+function handleContextRestored(): void {
+  isContextLost = false;
+  try {
+    renderer = createSkyRenderer(canvas, favicon);
+    errorMessage.hidden = true;
+    resumeAnimation();
+  } catch (error) {
+    showRendererError(error);
+    stop();
+  }
+}
+
+function showRendererError(error: unknown): void {
+  errorMessage.textContent =
+    error instanceof Error
+      ? error.message
+      : "The sky renderer could not start.";
+  errorMessage.hidden = false;
+}
 
 try {
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  canvas.addEventListener("webglcontextlost", handleContextLost);
+  canvas.addEventListener("webglcontextrestored", handleContextRestored);
   renderer = createSkyRenderer(canvas, favicon);
-  renderer.resize();
 
   window.addEventListener("resize", resize);
   window.addEventListener("pagehide", stop, { once: true });
@@ -62,12 +135,8 @@ try {
   if (params.has("hide_text") || params.get("hidden") === "true") {
     artworkDetails?.classList.add("hidden");
   }
-  animationFrame = window.requestAnimationFrame(render);
+  resumeAnimation();
 } catch (error) {
-  errorMessage.textContent =
-    error instanceof Error
-      ? error.message
-      : "The sky renderer could not start.";
-  errorMessage.hidden = false;
+  showRendererError(error);
   stop();
 }

@@ -187,8 +187,8 @@ void main() {
   float fieldSoftness = phaseValue(
     phaseWeights,
     duskWeight,
-    vec4(0.30, 0.36, 0.40, 0.30),
-    0.28
+    vec4(0.50, 0.54, 0.58, 0.50),
+    0.48
   );
 
   float boundaryNoise = noise(
@@ -232,7 +232,7 @@ void main() {
     warpStrength * 0.68,
     fieldSoftness * 1.16
   );
-  warmField *= 1.0 - warmCut * mix(0.12, 0.58, seedF);
+  warmField *= 1.0 - warmCut * mix(0.08, 0.38, seedF);
   warmField *= 0.78 + boundaryNoise * 0.12;
   float warmOffset = phaseValue(
     phaseWeights,
@@ -307,7 +307,7 @@ void main() {
     warpStrength * 0.72,
     fieldSoftness * 1.18
   );
-  counterField *= 1.0 - counterCut * min(0.78, cutStrength * mix(1.0, 1.70, seedB));
+  counterField *= 1.0 - counterCut * min(0.52, cutStrength * mix(0.72, 1.12, seedB));
   float counterOffset = phaseValue(
     phaseWeights,
     duskWeight,
@@ -320,7 +320,7 @@ void main() {
     palette(counterOffset),
     counterField * counterStrength * mix(0.92, 1.34, seedA)
   );
-  color = mix(atmosphereColor, color, 0.94);
+  color = mix(atmosphereColor, color, 0.78);
 
   float centerLight = 1.0 - smoothstep(
     0.18,

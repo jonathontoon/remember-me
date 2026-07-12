@@ -12,14 +12,29 @@ function getRequiredElement<T extends Element>(
   return element;
 }
 
+const params = new URLSearchParams(window.location.search);
 const canvas = getRequiredElement("sky", HTMLCanvasElement);
 const favicon = getRequiredElement("favicon", HTMLLinkElement);
 const errorMessage = getRequiredElement("error", HTMLParagraphElement);
 const artworkDetails = document.querySelector<HTMLElement>("aside");
-const hideText = new URLSearchParams(window.location.search).has("hide");
 
 let renderer: SkyRenderer | null = null;
 let animationFrame = 0;
+
+const DAY_MINUTES = 24 * 60;
+
+function parseTimeOverride(time: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return (hours * 60 + minutes) / DAY_MINUTES;
+}
+
+const timeOverride = params.has("time")
+  ? parseTimeOverride(params.get("time")!)
+  : null;
 
 const stop = (): void => {
   window.cancelAnimationFrame(animationFrame);
@@ -31,7 +46,7 @@ const stop = (): void => {
 const resize = (): void => renderer?.resize();
 
 const render = (milliseconds: number): void => {
-  renderer?.render(milliseconds);
+  renderer?.render(milliseconds, timeOverride);
   animationFrame = window.requestAnimationFrame(render);
 };
 
@@ -44,7 +59,7 @@ try {
   window.addEventListener("click", () => {
     artworkDetails?.classList.toggle("hidden");
   });
-  if (hideText) {
+  if (params.get("hidden") === "true") {
     artworkDetails?.classList.add("hidden");
   }
   animationFrame = window.requestAnimationFrame(render);

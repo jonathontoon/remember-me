@@ -30,7 +30,7 @@ vec3 ramp(float t) {
   vec3 blush = vec3(0.92,0.34,0.35);
   vec3 dusk = vec3(0.28,0.10,0.32);
   float cycle = sin(t * 6.283185);
-  float warm = smoothstep(-.15,.5,cycle) * smoothstep(.95,.25,cycle);
+  float warm = smoothstep(-.15,.5,cycle) * (1.0 - smoothstep(.25,.95,cycle));
   vec3 sky = mix(night, blue, smoothstep(0.,.22,t));
   sky = mix(sky, dayBlue, smoothstep(.18,.42,t));
   sky = mix(sky, gold, smoothstep(.34,.54,t));

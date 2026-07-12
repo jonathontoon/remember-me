@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "of-a-time",
+  "name": "what-light-remains",
   "compatibility_date": "2026-07-11",
   "observability": {
     "enabled": true,

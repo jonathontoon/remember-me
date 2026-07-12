@@ -1,8 +1,9 @@
 :root {
+  --browser-toolbar-height: max(0px, calc(100lvh - 100dvh));
+
   color: rgb(255 255 255 / 60%);
   font-family: sans-serif;
   font-synthesis: none;
-  background: #0b1220;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -16,7 +17,6 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #0b1220;
 }
 
 main {
@@ -49,7 +49,9 @@ canvas {
 aside {
   position: absolute;
   right: calc(1.75rem + env(safe-area-inset-right, 0px));
-  bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(
+    1.75rem + env(safe-area-inset-bottom, 0px) + var(--browser-toolbar-height)
+  );
   z-index: 10;
   max-width: 15rem;
   color: rgb(255 255 255 / 60%);
@@ -100,6 +102,8 @@ aside a:focus-visible {
 @media (max-width: 640px) {
   aside {
     right: calc(1.25rem + env(safe-area-inset-right, 0px));
-    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(
+      1.25rem + env(safe-area-inset-bottom, 0px) + var(--browser-toolbar-height)
+    );
   }
 }

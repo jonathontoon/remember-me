@@ -7,8 +7,14 @@ uniform float time;
 uniform float day;
 uniform float dateSeed;
 
+const float DATE_VARIATION = 0.50;
+
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float dateVariation(float value) {
+  return mix(0.5, value, DATE_VARIATION);
 }
 
 float noise(vec2 p) {
@@ -95,9 +101,12 @@ void main() {
 
   float localTime = fract(day);
   float minutes = time * 0.0000166667;
-  float seedA = hash(vec2(dateSeed, 11.7));
-  float seedB = hash(vec2(dateSeed, 37.1));
-  float seedC = hash(vec2(dateSeed, 83.9));
+  float seedA = dateVariation(hash(vec2(dateSeed, 11.7)));
+  float seedB = dateVariation(hash(vec2(dateSeed, 37.1)));
+  float seedC = dateVariation(hash(vec2(dateSeed, 83.9)));
+  float seedD = dateVariation(hash(vec2(dateSeed, 149.3)));
+  float seedE = dateVariation(hash(vec2(dateSeed, 211.9)));
+  float seedF = dateVariation(hash(vec2(dateSeed, 293.7)));
   vec2 seedOffset = vec2(seedA - 0.5, seedB - 0.5);
 
   float nightWeight = phaseWeight(localTime, 0.00, 0.28);
@@ -178,8 +187,8 @@ void main() {
   float fieldSoftness = phaseValue(
     phaseWeights,
     duskWeight,
-    vec4(0.54, 0.60, 0.68, 0.54),
-    0.52
+    vec4(0.30, 0.36, 0.40, 0.30),
+    0.28
   );
 
   float boundaryNoise = noise(
@@ -196,19 +205,34 @@ void main() {
 
   float warmPhase = minutes * 0.075;
   vec2 warmCenter = vec2(
-    -0.27 + seedOffset.x * 0.10 + sin(minutes * 0.041) * 0.055,
-    -0.31 + seedOffset.y * 0.12 + cos(minutes * 0.033) * 0.045
+    -0.27 + (seedA - 0.5) * 0.32 + sin(minutes * 0.041) * 0.055,
+    -0.31 + (seedB - 0.5) * 0.28 + cos(minutes * 0.033) * 0.045
   ) + warmTimeOffset;
+  vec2 warmDimensions = vec2(
+    mix(0.38, 0.66, seedC),
+    mix(0.30, 0.54, seedD)
+  ) * warmScale;
   float warmField = organicField(
     p,
     warmCenter,
-    vec2(0.52 + seedA * 0.07, 0.41 + seedB * 0.06) * warmScale,
+    warmDimensions,
     aspectCorrection,
-    -0.32 + seedC * 0.20 + phaseWeights.w * 0.34 - duskWeight * 0.24,
-    warmPhase + seedA * 6.283185,
-    warpStrength,
+    mix(-0.82, 0.38, seedE) + phaseWeights.w * 0.34 - duskWeight * 0.24,
+    warmPhase + seedF * 6.283185,
+    warpStrength * mix(0.72, 1.34, seedB),
     fieldSoftness
   );
+  float warmCut = organicField(
+    p,
+    warmCenter + vec2(mix(-0.20, 0.20, seedD), mix(-0.15, 0.15, seedE)),
+    warmDimensions * vec2(mix(0.34, 0.62, seedA), mix(0.38, 0.70, seedF)),
+    aspectCorrection,
+    seedC * 3.141593,
+    warmPhase + seedE * 4.0,
+    warpStrength * 0.68,
+    fieldSoftness * 1.16
+  );
+  warmField *= 1.0 - warmCut * mix(0.12, 0.58, seedF);
   warmField *= 0.78 + boundaryNoise * 0.12;
   float warmOffset = phaseValue(
     phaseWeights,
@@ -216,22 +240,27 @@ void main() {
     vec4(-0.08, -0.19, -0.14, -0.24),
     -0.21
   );
-  color = mix(color, palette(warmOffset), warmField * warmStrength);
+  warmOffset += mix(-0.06, 0.06, seedE);
+  color = mix(
+    color,
+    palette(warmOffset),
+    warmField * warmStrength * mix(0.88, 1.22, seedC)
+  );
 
   float edgePhase = 1.7 + minutes * 0.052;
   vec2 edgeCenter = vec2(
-    0.34 + seedOffset.y * 0.09 + cos(minutes * 0.029) * 0.045,
-    0.08 + seedOffset.x * 0.14 + sin(minutes * 0.037) * 0.055
+    0.34 + (seedD - 0.5) * 0.34 + cos(minutes * 0.029) * 0.045,
+    0.08 + (seedE - 0.5) * 0.40 + sin(minutes * 0.037) * 0.055
   ) + edgeTimeOffset;
   float edgeField = organicField(
     p,
     edgeCenter,
-    vec2(0.36 + seedB * 0.06, 0.58 + seedC * 0.10) * edgeScale,
+    vec2(mix(0.25, 0.48, seedF), mix(0.42, 0.76, seedA)) * edgeScale,
     aspectCorrection,
-    0.05 + seedA * 0.20 - phaseWeights.y * 0.24 + duskWeight * 0.30,
-    edgePhase + seedB * 6.283185,
-    warpStrength * 0.94,
-    fieldSoftness * 0.98
+    mix(-0.46, 0.72, seedB) - phaseWeights.y * 0.24 + duskWeight * 0.30,
+    edgePhase + seedC * 6.283185,
+    warpStrength * mix(0.68, 1.28, seedD),
+    fieldSoftness * mix(0.86, 1.10, seedF)
   );
   edgeField *= 0.84 + (1.0 - boundaryNoise) * 0.10;
   float edgeOffset = phaseValue(
@@ -240,42 +269,58 @@ void main() {
     vec4(0.18, 0.21, 0.16, 0.24),
     0.27
   );
-  color = mix(color, palette(edgeOffset), edgeField * edgeStrength);
+  edgeOffset += mix(-0.07, 0.07, seedC);
+  color = mix(
+    color,
+    palette(edgeOffset),
+    edgeField * edgeStrength * mix(0.90, 1.28, seedE)
+  );
 
   float counterPhase = 3.4 + minutes * 0.046;
   vec2 counterCenter = vec2(
-    -0.05 + seedOffset.x * 0.08 + sin(minutes * 0.027) * 0.05,
-    0.25 + seedOffset.y * 0.10 + cos(minutes * 0.031) * 0.04
+    -0.05 + (seedF - 0.5) * 0.38 + sin(minutes * 0.027) * 0.05,
+    0.25 + (seedC - 0.5) * 0.32 + cos(minutes * 0.031) * 0.04
   ) + counterTimeOffset;
+  vec2 counterDimensions = vec2(
+    mix(0.22, 0.42, seedB),
+    mix(0.22, 0.44, seedE)
+  ) * counterScale;
   float counterField = organicField(
     p,
     counterCenter,
-    vec2(0.30 + seedC * 0.06, 0.31 + seedA * 0.06) * counterScale,
+    counterDimensions,
     aspectCorrection,
-    -0.58 + seedB * 0.20 + phaseWeights.y * 0.28 - duskWeight * 0.32,
-    counterPhase + seedC * 6.283185,
-    warpStrength * 1.06,
+    mix(-1.02, 0.42, seedD) + phaseWeights.y * 0.28 - duskWeight * 0.32,
+    counterPhase + seedA * 6.283185,
+    warpStrength * mix(0.78, 1.38, seedF),
     fieldSoftness * 1.10
   );
+  float cutAngle = seedF * 6.283185;
+  vec2 cutOffset = vec2(cos(cutAngle), sin(cutAngle)) * mix(0.08, 0.20, seedA);
   float counterCut = organicField(
     p,
-    counterCenter + vec2(0.12, -0.12),
-    vec2(0.23, 0.23) * mix(0.78, 1.24, cutStrength),
+    counterCenter + cutOffset,
+    counterDimensions * vec2(mix(0.44, 0.76, seedC), mix(0.42, 0.72, seedD)),
     aspectCorrection,
-    -0.30,
-    counterPhase + 0.8,
+    cutAngle,
+    counterPhase + seedE * 4.0,
     warpStrength * 0.72,
     fieldSoftness * 1.18
   );
-  counterField *= 1.0 - counterCut * cutStrength;
+  counterField *= 1.0 - counterCut * min(0.78, cutStrength * mix(1.0, 1.70, seedB));
   float counterOffset = phaseValue(
     phaseWeights,
     duskWeight,
     vec4(0.29, 0.25, 0.20, 0.30),
     0.34
   );
-  color = mix(color, palette(counterOffset), counterField * counterStrength);
-  color = mix(atmosphereColor, color, 0.82);
+  counterOffset += mix(-0.08, 0.08, seedF);
+  color = mix(
+    color,
+    palette(counterOffset),
+    counterField * counterStrength * mix(0.92, 1.34, seedA)
+  );
+  color = mix(atmosphereColor, color, 0.94);
 
   float centerLight = 1.0 - smoothstep(
     0.18,

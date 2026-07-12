@@ -15,6 +15,14 @@ Inspired by the works of [Tori Hinn](https://www.instagram.com/torihinn/) and th
 - Vite
 - CSS
 
+## URL parameters
+
+- `time=HH:MM` sets the time of day, for example `?time=18:30`.
+- `date=YYYY-MM-DD` sets the date that seeds the daily composition, for example
+  `?date=2026-07-13`.
+- The parameters can be combined, for example
+  `?date=2026-07-13&time=18:30`.
+
 ## Credits
 
 Made by [Jonathon Toon](https://www.jonathontoon.com).

@@ -35,8 +35,33 @@ function parseTimeOverride(time: string): number | null {
   return (hours * 60 + minutes) / DAY_MINUTES;
 }
 
+function parseDateOverride(date: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsedDate = new Date(0);
+  parsedDate.setHours(0, 0, 0, 0);
+  parsedDate.setFullYear(year, month - 1, day);
+
+  if (
+    parsedDate.getFullYear() !== year ||
+    parsedDate.getMonth() !== month - 1 ||
+    parsedDate.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsedDate;
+}
+
 const timeOverride = params.has("time")
   ? parseTimeOverride(params.get("time")!)
+  : null;
+const dateOverride = params.has("date")
+  ? parseDateOverride(params.get("date")!)
   : null;
 
 function pauseAnimation(): void {
@@ -55,7 +80,7 @@ function stop(): void {
 }
 
 function draw(milliseconds: number): void {
-  renderer?.render(milliseconds, timeOverride);
+  renderer?.render(milliseconds, timeOverride, dateOverride);
   lastRenderMilliseconds = milliseconds;
 }
 

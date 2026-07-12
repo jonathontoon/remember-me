@@ -19,8 +19,10 @@ const MAX_DEVICE_PIXEL_RATIO = 2;
 
 function getWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext {
   const context = canvas.getContext("webgl", {
+    alpha: false,
     antialias: false,
-    premultipliedAlpha: false,
+    depth: false,
+    preserveDrawingBuffer: false,
   });
   if (!context) {
     throw new Error("This installation needs a WebGL-capable browser.");
